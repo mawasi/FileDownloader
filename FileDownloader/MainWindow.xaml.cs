@@ -76,49 +76,14 @@ namespace FileDownloader
 				return;
 			}
 
-			var doc = default(IHtmlDocument);
-			try{
-				string url = URLTextBox.Text;
-				doc = await Task.Run(() => GetHtmlDocumentAsync(url));
-				// リンク要素取得？よくわかってない。
-				var links = doc.Links;
 
-				// pdfとzipのURLリストに分ける
-				var pdfs = links.Select(elem => elem.GetAttribute("href")).Where(elem => elem.Contains(".pdf"));
-				var zips = links.Select(elem => elem.GetAttribute("href")).Where(elem => elem.Contains(".zip"));
+			OutputLog.Text += $"Download Commences.\n";
 
+			string url = URLTextBox.Text;
+			string savepath = SavePathTextBox.Text;
+			await Task.Run(() => ExecuteAsync(url, savepath));
 
-				// todo
-				// 上記リストから5個ずつくらいに小分けにしてParallel.ForEach使ってダウンロード処理作る
-
-				foreach(var pdf in pdfs){
-					OutputLog.Text += $"{pdf}\n";
-					string filename = System.IO.Path.GetFileName(pdf);
-					string savepath = $"{SavePathTextBox.Text}\\{filename}";
-
-					using(var client = new HttpClient()){
-						using(var data = await client.GetStreamAsync(new Uri(pdf))){
-							// このタイミングではまだDL完了してない
-//							OutputLog.Text += $"DL完了\n";
-							using(var fs = new System.IO.FileStream(savepath, System.IO.FileMode.Create)){
-								using(var bw = new System.IO.BinaryWriter(fs)){
-									byte[] binary = new byte[1048576];
-									int read = 0;
-									while((read = await data.ReadAsync(binary, 0, binary.Length)) > 0){
-										bw.Write(binary, 0, read);
-									}
-
-								}
-							}
-						}
-					}
-					OutputLog.Text += $"完了\n";
-					break;	// とりあえず１個DLしたらおわる
-				}
-			}
-			finally{
-				doc.Close();
-			}
+			OutputLog.Text += $"Download Complete!!\n";
 
 		}
 
@@ -136,66 +101,76 @@ namespace FileDownloader
 				// タイムアウト時間の設定
 				client.Timeout = TimeSpan.FromSeconds(10.0);
 
-				using(var webstream = await client.GetStreamAsync(new Uri(url))){
-					var parser = new HtmlParser();
-					doc = await parser.ParseAsync(webstream);
+				try{
+					using(var webstream = await client.GetStreamAsync(new Uri(url))){
+						var parser = new HtmlParser();
+						doc = await parser.ParseAsync(webstream);
+					}
 				}
+				catch(Exception e){
+					throw e;
+				}
+
 			}
 
 			return doc;
 		}
 
-		private async Task<bool> Execute()
+		/// <summary>
+		/// ダウンロード処理
+		/// </summary>
+		/// <returns></returns>
+		private async Task<bool> ExecuteAsync(string url, string savepath)
 		{
 
-			var doc = default(IHtmlDocument);
 			try{
-				doc = await Task.Run(() => GetHtmlDocumentAsync(URLTextBox.Text));
-				// リンク要素取得？よくわかってない。
-				var links = doc.Links;
+				using(var doc = await Task.Run(() => GetHtmlDocumentAsync(url))){
+					// リンク要素取得？よくわかってない。
+					var links = doc.Links;
 
-				// pdfとzipのURLリストに分ける
-				var pdfs = links.Select(elem => elem.GetAttribute("href")).Where(elem => elem.Contains(".pdf"));
-				var zips = links.Select(elem => elem.GetAttribute("href")).Where(elem => elem.Contains(".zip"));
+					// pdfとzipのURLリストに分ける
+					var pdfs = links.Select(elem => elem.GetAttribute("href")).Where(elem => elem.Contains(".pdf"));
+					var zips = links.Select(elem => elem.GetAttribute("href")).Where(elem => elem.Contains(".zip"));
 
 
-				// todo
-				// 上記リストから5個ずつくらいに小分けにしてParallel.ForEach使ってダウンロード処理作る
+					// todo
+					// 上記リストから5個ずつくらいに小分けにしてParallel.ForEach使ってダウンロード処理作る
 
-				foreach(var zip in zips){
-					OutputLog.Text += $"{zip}\n";
+					Dispatcher.Invoke(() => OutputLog.Text += $"{pdfs.Count()} PDF Files.\n");
+
+					foreach(var pdf in pdfs){
+						string filename = System.IO.Path.GetFileName(pdf);
+						string save = $"{savepath}\\{filename}";
+
+						Dispatcher.Invoke(() => OutputLog.Text += $"{pdf}");
+
+						using(var client = new HttpClient()){
+							using(var data = await client.GetStreamAsync(new Uri(pdf))){
+								// このタイミングではまだDL完了してない
+	//							OutputLog.Text += $"DL完了\n";
+								using(var fs = new System.IO.FileStream(save, System.IO.FileMode.Create)){
+									using(var bw = new System.IO.BinaryWriter(fs)){
+										byte[] binary = new byte[1048576];
+										int read = 0;
+										while((read = await data.ReadAsync(binary, 0, binary.Length)) > 0){
+											bw.Write(binary, 0, read);
+										}
+
+									}
+								}
+							}
+						}
+						Dispatcher.Invoke(() => OutputLog.Text += $"  Complete.\n");
+//						break;	// とりあえず１個DLしたらおわる
+					}
 				}
 			}
-			finally{
-				doc.Close();
-			}
-
-			return true;
-		}
-#if false
-		private async Task<bool> DownloadPDF(string root)
-		{
-
-			List<string> PDFURLs = new List<string>();
-
-
-			// 実際PDFダウンロードする処理
-			Func<List<string>, bool> DLPDF = (urls) => {
-				return true;
-			};
-
-
-			// 小分けにしてダウンロード
-			while(true){
-				
-
-				await 
-
+			catch(Exception e){
+				Dispatcher.Invoke(() => OutputLog.Text += $"\n例外が発生しました。\n{e}\n処理を中止します。");
 			}
 
 			return true;
 		}
 
-#endif
 	}
 }
