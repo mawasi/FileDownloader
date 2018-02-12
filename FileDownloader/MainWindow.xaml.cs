@@ -15,6 +15,7 @@ using System.Windows.Shapes;
 
 
 using System.Net.Http;
+using System.IO;
 
 using AngleSharp.Parser.Html;
 using AngleSharp.Dom.Html;
@@ -25,22 +26,17 @@ using AngleSharp.Dom.Html;
 http://www.gdcvault.com/gdmag
 ↑ここのPDFファイルを全部ダウンロードするためのツール！！
 
-以下参考
-http://www.atmarkit.co.jp/ait/articles/1501/06/news086.html
-http://blog.codebook-10000.com/entry/20131001/1380648141
-https://qiita.com/matarillo/items/a92e7efbfd2fdec62595
-http://ufcpp.net/study/csharp/lib_parallel.html
-http://ufcpp.net/study/csharp/rm_default.html
+ダウンロード中のプログレス出してるプロジェクト
+https://github.com/yuxxxx/ProgressiveDownload
+
+
+
+非同期の例外処理
+https://www.kekyo.net/2015/06/22/5119
+
 
 */
 
-
-/*
-NuGetからこのプロジェクトに以下のパッケージをインストール済み
-
-AngleSharp <- HTMLパーサー
-
-*/
 
 namespace FileDownloader
 {
@@ -79,9 +75,13 @@ namespace FileDownloader
 
 			OutputLog.Text += $"Download Commences.\n";
 
+			DLButton.IsEnabled = false;
+
 			string url = URLTextBox.Text;
 			string savepath = SavePathTextBox.Text;
 			await Task.Run(() => ExecuteAsync(url, savepath));
+
+			DLButton.IsEnabled = true;
 
 			OutputLog.Text += $"Download Complete!!\n";
 
@@ -108,13 +108,56 @@ namespace FileDownloader
 					}
 				}
 				catch(Exception e){
-					throw e;
+					throw;
 				}
 
 			}
 
 			return doc;
 		}
+
+
+		/// <summary>
+		/// URLを指定してダウンロード
+		/// </summary>
+		/// <param name="url"></param>
+		/// <param name="savepath"></param>
+		/// <returns></returns>
+		async Task<bool> Download(string url, string savepath)
+		{
+			try{
+				string filename = System.IO.Path.GetFileName(url);
+				string save = $"{savepath}\\{filename}";
+
+				Dispatcher.Invoke(() => OutputLog.Text += $"{url}");
+
+				using(var client = new HttpClient()){
+					// ウィンドウにプログレスバーを追加したいが、進捗見るならここでやる必要がある。どうやったらいいのか？
+					using(var data = await client.GetStreamAsync(new Uri(url))){
+						// このタイミングではまだDL完了してない
+	//							OutputLog.Text += $"DL完了\n";
+						using(var fs = new System.IO.FileStream(save, System.IO.FileMode.Create)){
+							using(var bw = new System.IO.BinaryWriter(fs)){
+								byte[] binary = new byte[1048576];
+								int read = 0;
+								while((read = await data.ReadAsync(binary, 0, binary.Length)) > 0){
+									bw.Write(binary, 0, read);
+								}
+
+							}
+						}
+					}
+				}
+				Dispatcher.Invoke(() => OutputLog.Text += $"  Complete.\n");
+
+			}
+			catch(Exception e){
+				throw;
+			}
+
+			return true;
+		}
+
 
 		/// <summary>
 		/// ダウンロード処理
@@ -137,31 +180,23 @@ namespace FileDownloader
 					// 上記リストから5個ずつくらいに小分けにしてParallel.ForEach使ってダウンロード処理作る
 
 					Dispatcher.Invoke(() => OutputLog.Text += $"{pdfs.Count()} PDF Files.\n");
-
+					string save = $"{savepath}\\pdf";
+					if(!Directory.Exists(save)){
+						Directory.CreateDirectory(save);
+					}
 					foreach(var pdf in pdfs){
-						string filename = System.IO.Path.GetFileName(pdf);
-						string save = $"{savepath}\\{filename}";
-
-						Dispatcher.Invoke(() => OutputLog.Text += $"{pdf}");
-
-						using(var client = new HttpClient()){
-							using(var data = await client.GetStreamAsync(new Uri(pdf))){
-								// このタイミングではまだDL完了してない
-	//							OutputLog.Text += $"DL完了\n";
-								using(var fs = new System.IO.FileStream(save, System.IO.FileMode.Create)){
-									using(var bw = new System.IO.BinaryWriter(fs)){
-										byte[] binary = new byte[1048576];
-										int read = 0;
-										while((read = await data.ReadAsync(binary, 0, binary.Length)) > 0){
-											bw.Write(binary, 0, read);
-										}
-
-									}
-								}
-							}
-						}
-						Dispatcher.Invoke(() => OutputLog.Text += $"  Complete.\n");
+						await Download(pdf, save);
 //						break;	// とりあえず１個DLしたらおわる
+					}
+
+					Dispatcher.Invoke(() => OutputLog.Text += $"{pdfs.Count()} ZIP Files.\n");
+					save = $"{savepath}\\zip";
+					if(!Directory.Exists(save)){
+						Directory.CreateDirectory(save);
+					}
+					foreach(var zip in zips){
+						await Download(zip, save);
+//						break;	// 一旦一つダウンロードしたら終わり
 					}
 				}
 			}
@@ -171,6 +206,8 @@ namespace FileDownloader
 
 			return true;
 		}
-
 	}
+
+
+
 }
