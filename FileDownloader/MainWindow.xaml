@@ -6,14 +6,20 @@
         xmlns:local="clr-namespace:FileDownloader"
         mc:Ignorable="d"
         Title="FileDownloader" Height="341.839" Width="525">
+	<Window.DataContext>
+		<local:MainWindowViewModel />
+	</Window.DataContext>
 	<Grid>
 		<Label Name="URLLabel" Content="URL" Height="27" Margin="10,39,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Width="91"/>
-		<TextBox Name="URLTextBox" Height="24" Margin="10,66,10,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top"/>
+		<TextBox Name="URLTextBox" Height="24" Margin="10,66,10,0" TextWrapping="Wrap" Text="{Binding Path=URL, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Top"/>
 		<Label Name="SaveLabel" Content="SaveDirectory" Height="27" Margin="10,95,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.332,1.1" HorizontalAlignment="Left" Width="91"/>
-		<TextBox Name="SavePathTextBox" Height="24" Margin="10,122,10,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top"/>
+		<TextBox Name="SavePathTextBox" Height="24" Margin="10,122,10,0" TextWrapping="Wrap" Text="{Binding Path=SavePath, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Top"/>
 		<TextBlock Name="Description" Height="29" Margin="10,10,10,0" TextWrapping="Wrap" Text="指定したURLからリンクされているPDFファイルを一括でダウンロードします。" VerticalAlignment="Top"/>
+		<Button Name="DLButton" Content="Download!" Height="29" Margin="0,151,10,0" VerticalAlignment="Top" Command="{Binding Path=DownloadCommand}" HorizontalAlignment="Right" Width="116"/>
+<!--
 		<Button Name="DLButton" Content="Download!" Height="29" Margin="0,151,10,0" VerticalAlignment="Top" Click="DownloadButtonClick" HorizontalAlignment="Right" Width="116"/>
-		<TextBox Name="OutputLog" Margin="10,185,10,10" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Text=""/>
+-->
+		<TextBox Name="OutputLog" Margin="10,185,10,10" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Text="{Binding Path=Log, UpdateSourceTrigger=PropertyChanged}"/>
 
 	</Grid>
 </Window>
