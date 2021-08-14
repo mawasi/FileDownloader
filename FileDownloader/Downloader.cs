@@ -4,8 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Net.Http;
-using AngleSharp.Parser.Html;
-using AngleSharp.Dom.Html;
+using AngleSharp.Html;
+using AngleSharp.Html.Dom;
+using AngleSharp.Html.Parser;
 
 namespace FileDownloader
 {
@@ -86,7 +87,7 @@ namespace FileDownloader
 				try{
 					using(var webstream = await client.GetStreamAsync(new Uri(url))){
 						var parser = new HtmlParser();
-						doc = await parser.ParseAsync(webstream);
+						doc = await parser.ParseDocumentAsync(webstream);
 					}
 				}
 				catch(Exception){

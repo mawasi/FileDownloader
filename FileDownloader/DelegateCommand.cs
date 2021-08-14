@@ -25,11 +25,14 @@ namespace FileDownloader
 
 		Func<bool>	canExecute;
 
+
+		#region method
+
 		/// <summary>
 		/// コマンドのExecuteメソッドで実行する処理を指定してDelegateCommandのインスタンスを作成します。
 		/// </summary>
 		/// <param name="execute"></param>
-		public DelegateCommand(Action execute) : this(execute, () => true) {}
+		private DelegateCommand(Action execute) : this(execute, () => true) {}
 
 		/// <summary>
 		/// コマンドのExecuteメソッドで実行する処理とCanExecuteメソッドで実行する処理を指定して
@@ -62,5 +65,7 @@ namespace FileDownloader
 		{
 			this.execute();
 		}
+
+		#endregion method
 	}
 }

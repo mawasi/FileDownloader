@@ -17,8 +17,8 @@ using System.Windows.Shapes;
 using System.Net.Http;
 using System.IO;
 
-using AngleSharp.Parser.Html;
-using AngleSharp.Dom.Html;
+using AngleSharp.Html;
+using AngleSharp.Html.Dom;
 
 
 /*

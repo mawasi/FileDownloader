@@ -7,6 +7,9 @@ using System.Windows.Input;
 
 namespace FileDownloader
 {
+	/// <summary>
+	/// 非同期実行を受け取るICommandの実装
+	/// </summary>
 	public class AsyncDelegateCommand : ICommand
 	{
 
@@ -35,7 +38,7 @@ namespace FileDownloader
 		/// コンストラクタ
 		/// </summary>
 		/// <param name="executeAsync">実行したい非同期処理</param>
-		public AsyncDelegateCommand(Func<Task> executeAsync) : this(executeAsync, () => true){}
+		private AsyncDelegateCommand(Func<Task> executeAsync) : this(executeAsync, () => true){}
 
 		/// <summary>
 		/// コンストラクタ
